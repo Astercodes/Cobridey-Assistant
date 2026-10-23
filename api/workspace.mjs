@@ -1,3 +1,4 @@
+import {instagramReady} from '../lib/instagram.mjs';
 import {createHmac,randomUUID,timingSafeEqual} from 'node:crypto';
 import {createHostedStore} from '../lib/hosted-store.mjs';
 import {mutate} from '../lib/mutate.mjs';
@@ -33,16 +34,17 @@ export function createHandler(env=process.env,request=fetch){
    }
    if(password){const cookie=req.headers.cookie?.match(/(?:^|; )session=([^;]+)/)?.[1]||'';const parts=cookie.split('.');const value=parts.slice(0,2).join('.');if(parts.length!==3||!equal(parts[2],signature(value,password))||!(Number(parts[0])>Date.now()))return json({error:'Sign in required'},401)}
    if(path==='/api/state'&&req.method==='GET'){
-    const {value}=await store.read();return json({...value,storage:store.configured?'hosted':'preview',readOnly:!store.configured});
+    const {value}=await store.read();return json({...value,storage:store.configured?'hosted':'preview',readOnly:!store.configured,mediaReady:Boolean(store.configured&&env.BLOB_READ_WRITE_TOKEN&&env.WORKSPACE_PASSWORD),publishing:{ready:instagramReady(env),enabled:env.PUBLISHING_ENABLED==='true'&&instagramReady(env),lastTick:await store.lastTick()}});
    }
    if(path==='/api/action'&&req.method==='POST'){
     if(!store.configured)return json({error:'Read-only preview: connect hosted storage in Vercel to save changes. Nothing was saved.'},503);
+    if(body.status==='Scheduled'&&(env.PUBLISHING_ENABLED!=='true'||!instagramReady(env)))return json({error:'Connect Instagram, private media storage, and a background scheduler before enabling automatic scheduling.'},409);
     const {value,raw}=await store.read();mutate(value,body);
     value.audit=[{id:randomUUID(),time:new Date().toISOString(),action:body.action},...(value.audit||[])];
     await store.save(value,raw);return json({ok:true});
    }
    return json({error:'Not found'},404);
-  }catch(error){if(error.status===409)return json({error:error.message},409);if(error instanceof SyntaxError)return json({error:'Invalid JSON'},400);if(/Hosted storage/.test(error.message)||error.name==='TimeoutError')return json({error:'Hosted storage is unavailable. Please retry; changes were not confirmed.'},503);return json({error:'The request could not be completed. Check the content and try again.'},400)}
+  }catch(error){if(error.status===409)return json({error:error.message},409);if(error instanceof SyntaxError)return json({error:'Invalid JSON'},400);if(/Hosted storage/.test(error.message)||error.name==='TimeoutError')return json({error:'Hosted storage is unavailable. Please retry; changes were not confirmed.'},503);return json({error:error.message?.slice(0,200)||'The request could not be completed.'},400)}
  };
 }
 export default createHandler();

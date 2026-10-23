@@ -4,7 +4,7 @@ A polished, palette-inspired founder workspace for Cobridey. **Foundation releas
 
 ## Run
 
-Requires Node.js 24+. No dependencies to install.
+Requires Node.js 24+. Install dependencies with `pnpm install` (or `npm install`). The browser upload bundle is committed; rebuild it with `pnpm exec esbuild lib/blob-browser.js --bundle --format=esm --platform=browser --minify --outfile=public/blob-client.js` after SDK changes.
 
 ```sh
 node --env-file-if-exists=.env server.mjs
@@ -24,7 +24,7 @@ Open http://127.0.0.1:3000. Copy `.env.example` to `.env` to set a workspace pas
 
 ## Architecture and deployment
 
-Dependency-free Node HTTP server + SQLite (WAL) + browser JavaScript. This keeps the initial solo-founder workspace easy to run and inspect. API mutations live in `server.mjs`; views in `public/app.js`; design tokens and responsive layouts in `public/style.css`. Database schema is applied idempotently at startup. State and audit records live in `data/workspace.sqlite`; never commit this directory.
+Node HTTP server + SQLite (WAL) + browser JavaScript. This keeps the initial solo-founder workspace easy to run and inspect. API mutations live in `server.mjs`; views in `public/app.js`; design tokens and responsive layouts in `public/style.css`. Database schema is applied idempotently at startup. State and audit records live in `data/workspace.sqlite`; never commit this directory.
 
 Deploy on one persistent Node host with an attached persistent disk. Run one process until storage is normalized and concurrency is tested. Back up SQLite using the SQLite backup API or a consistent stopped-process copy, including a tested restore procedure. Do not deploy SQLite on ephemeral serverless storage. No background process sends content in this release.
 
@@ -52,3 +52,7 @@ See [integration research](docs/INTEGRATIONS.md) for constraints, sources, and b
 
 Vercel deployments use the separate stateless API entry point and external Redis storage. Without credentials, the hosted page is a read-only sample. See [Vercel setup](docs/VERCEL.md). Local execution still uses SQLite.
 
+
+## Media, music and Instagram publishing
+
+Image/video attachments and preferred songs are supported. Unconfigured deployments save device drafts in IndexedDB. Cloud uploads use a private Vercel Blob store; metadata persists in Redis. Instagram publishing is implemented but requires professional-account credentials and a running background trigger. See [publishing setup](docs/PUBLISHING.md) for the activation checklist and limitations.

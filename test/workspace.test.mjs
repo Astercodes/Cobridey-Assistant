@@ -6,6 +6,7 @@ import {join} from 'node:path';
 import {spawn} from 'node:child_process';
 test('persistent review workflow and security boundaries',async()=>{
  const dir=mkdtempSync(join(tmpdir(),'cobridey-test-'));cpSync(new URL('../server.mjs',import.meta.url),join(dir,'server.mjs'));
+ cpSync(new URL('../lib/',import.meta.url),join(dir,'lib'),{recursive:true});
  let child;let base;const start=()=>new Promise((resolve,reject)=>{child=spawn(process.execPath,[join(dir,'server.mjs')],{env:{...process.env,PORT:'0',WORKSPACE_PASSWORD:'test-password'}});child.once('error',reject);child.stdout.on('data',chunk=>{const url=chunk.toString().match(/http:\/\/[^\s]+/);if(url){base=url[0];resolve()}})});
  const stop=()=>new Promise(resolve=>{child.once('exit',resolve);child.kill()});
  try{await start();assert.equal((await fetch(base+'/api/state')).status,401);const login=await fetch(base+'/api/login',{method:'POST',body:JSON.stringify({password:'test-password'})});const cookie=login.headers.get('set-cookie').split(';')[0];const request=(path,body)=>fetch(base+'/api/'+path,{method:body?'POST':'GET',headers:{cookie,'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});
