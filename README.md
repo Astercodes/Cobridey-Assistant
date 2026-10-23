@@ -47,3 +47,8 @@ The full brief cannot be accepted as production-complete until real accounts, pr
 `node --test` runs isolated API integration checks against a temporary copy: persistence across restart, approve-before-schedule, validation, global pause, audit history, origin rejection, and password/session access. Browser QA may depend on local preview reachability.
 
 See [integration research](docs/INTEGRATIONS.md) for constraints, sources, and budgeting assumptions.
+
+## Vercel
+
+Vercel deployments use the separate stateless API entry point and external Redis storage. Without credentials, the hosted page is a read-only sample. See [Vercel setup](docs/VERCEL.md). Local execution still uses SQLite.
+
